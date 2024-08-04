@@ -2,7 +2,8 @@ import { clerkMiddleware, createRouteMatcher, authMiddleware } from "@clerk/next
 
 const isProtectedRoute = createRouteMatcher([
   '/',
-  '/profile'
+  '/profile',
+  '/api/assistant/create'
 ]);
 
 export default clerkMiddleware((auth, req) => {
