@@ -1,0 +1,24 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "cockroachdb"
+  url      = env("DATABASE_URL")
+}
+
+model Widget {
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+}
+
+model Assistant {
+  id String @id @default(uuid())
+  assistantId String @unique
+}
+
+model UserThread {
+  id String @id @default(uuid())
+  userId String @unique
+  threadId String
+  createdAt DateTime @default(now())
+}
