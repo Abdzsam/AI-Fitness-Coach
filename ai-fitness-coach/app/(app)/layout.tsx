@@ -2,11 +2,13 @@
 import Navbar from "@/components/Navbar";
 import axios from "axios";
 import { UserThread } from "@prisma/client";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
+import { useAtom } from "jotai";
+import { userThreadAtom } from "@/atoms";
 
 export default function AppLayout({children}: Readonly<{children: React.ReactNode}>) {
     
-  const [userThread, setUserThread] = useState<UserThread | null>(null)
+  const [userThread, setUserThread] = useAtom(userThreadAtom)
 
   useEffect(() => {
 
@@ -31,9 +33,11 @@ export default function AppLayout({children}: Readonly<{children: React.ReactNod
       }
       
     }
-    
+
     getUserThread()
-  },[])
+  },[setUserThread])
+
+  console.log(userThread)
 
   return (
       <div className="flex flex-col w-full h-full">
@@ -42,3 +46,5 @@ export default function AppLayout({children}: Readonly<{children: React.ReactNod
       </div>
     );
   }
+
+  
