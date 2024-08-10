@@ -1,29 +1,57 @@
 "use client"
+import { userThreadAtom } from '@/atoms';
 import axios from 'axios'
-import { Thread } from 'openai/src/resources/beta/index.js'
-import React, { useState } from 'react'
+import { useAtom } from 'jotai';
+import { Message } from "openai/resources/beta/threads/messages.js";
+import React, { useCallback, useEffect, useState } from 'react'
+
+const POLLING_FREQUENCY_MS = 1000;
 
 function ChatPage() {
+
+  const [userThread] = useAtom(userThreadAtom)
+
   const [fetching, setFetching] = useState(true)
-  const [messages, setMessages] = useState<Thread[]>([])
+  const [messages, setMessages] = useState<Message[]>([])
 
-  const fetchmessages = async () => {
-    setFetching(true)
-
-    const response = await axios.get<{success: boolean,error?: string, messages?: Thread[]}>("/api/messages/list")
-
-    if(!response.data.success || !response.data.messages) {
-      console.error(response.data.error ?? "Unknown error.")
-      setFetching(false)
-      return
+  const fetchmessages = useCallback(
+    async () => {
+      if(!userThread) return
+  
+      setFetching(true)
+  
+      try {
+        const response = await axios.post<{success: boolean,error?: string, messages?: Message[]}>("/api/messages/list", {threadId: userThread.threadId})
+  
+      if(!response.data.success || !response.data.messages) {
+        console.error(response.data.error ?? "Unknown error.")
+        setFetching(false)
+        return
+      }
+  
+      let newMessages = response.data.messages
+  
+      newMessages = newMessages.sort((a, b) => {
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      }).filter(message => message.content[0].type === "text" &&  message.content[0].text.value.trim() !== ""
+      )
+  
+      setMessages(newMessages)
+      }
+      catch (err) {
+        console.error(err)
+        setFetching(false)
+        setMessages([])
+      }
     }
+  , [userThread])
 
-    let newMessages = response.data.messages
+  useEffect(() => {
+    const interValid = setInterval(fetchmessages,POLLING_FREQUENCY_MS)
 
-    newMessages = newMessages.sort((a, b) => {
-      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-    })
-  }
+    return () => clearInterval(interValid)
+  },[fetchmessages])
+  
 
   return (
     <div className='w-screen h-screen flex flex-col bg-blue-950 text-yellow-400'>
