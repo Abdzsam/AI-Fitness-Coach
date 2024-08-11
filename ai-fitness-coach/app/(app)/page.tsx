@@ -60,7 +60,7 @@ function ChatPage() {
       <div className='flex-grow overflow-y-hidden p-8 space-y-2'>
         {fetching && messages.length === 0 && <div className='text-center font-bold'>Fetching...</div>}
         {messages.length === 0 && !fetching && (<div className='text-center font-bold'>No Messages...</div>)}
-        {messages.map(message => <div key={message.id}>{message.content[0].type === "text" ? message.content[0].text.value.split("\n").map((text, index) => <p key={index}>{text}</p>) : null}</div>}
+        {messages.map(message => (<div key={message.id}>{message.content[0].type === "text" ? message.content[0].text.value.split("\n").map((text, index) => <p key={index}>{text}</p>) : null}</div>))}
       </div>
     </div>
   )
