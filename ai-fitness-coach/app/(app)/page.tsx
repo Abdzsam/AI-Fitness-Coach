@@ -40,8 +40,10 @@ function ChatPage() {
       }
       catch (err) {
         console.error(err)
-        setFetching(false)
         setMessages([])
+      }
+      finally {
+        setFetching(false)
       }
     }
   , [userThread])
@@ -56,8 +58,9 @@ function ChatPage() {
   return (
     <div className='w-screen h-screen flex flex-col bg-blue-950 text-yellow-400'>
       <div className='flex-grow overflow-y-hidden p-8 space-y-2'>
-        {fetching && <div className='text-center font-bold'>Fetching...</div>}
+        {fetching && messages.length === 0 && <div className='text-center font-bold'>Fetching...</div>}
         {messages.length === 0 && !fetching && (<div className='text-center font-bold'>No Messages...</div>)}
+        {messages.map(message => <div key={message.id}>{message.content[0].type === "text" ? message.content[0].text.value.split("\n").map((text, index) => <p key={index}>{text}</p>) : null}</div>}
       </div>
     </div>
   )
