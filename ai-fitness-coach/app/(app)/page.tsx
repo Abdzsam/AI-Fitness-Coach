@@ -4,6 +4,7 @@ import axios from 'axios'
 import { useAtom } from 'jotai';
 import { Message } from "openai/resources/beta/threads/messages.js";
 import React, { useCallback, useEffect, useState } from 'react'
+import toast from "react-hot-toast" 
 
 const POLLING_FREQUENCY_MS = 1000;
 
@@ -14,8 +15,7 @@ function ChatPage() {
   const [fetching, setFetching] = useState(true)
   const [messages, setMessages] = useState<Message[]>([])
   const [message, setMessage] = useState("")
-
-  console.log(message)
+  const [sending, setSending] = useState(false)
 
   const fetchmessages = useCallback(
     async () => {
@@ -57,6 +57,23 @@ function ChatPage() {
     return () => clearInterval(interValid)
   },[fetchmessages])
   
+  const sendMessage = async () => {
+
+    if(!userThread || sending) return
+    
+    const { data: { message: newMessages }, } = await axios.post<{ success: boolean, message?: Message, error?: string}>
+    ("/api/message/create", { message, threadId: userThread.threadId, fromUser: "true",})
+
+    if(!newMessages){
+      console.error("No messages returned")
+      toast.error("Failed to send message. PLease try again.")
+      return
+    }
+
+    setMessages((prev) => [...prev,newMessages])
+  }
+
+ 
 
   return (
     <div className='w-screen h-screen flex flex-col bg-blue-950 text-yellow-400'>
