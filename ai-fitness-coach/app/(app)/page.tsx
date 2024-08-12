@@ -13,6 +13,9 @@ function ChatPage() {
 
   const [fetching, setFetching] = useState(true)
   const [messages, setMessages] = useState<Message[]>([])
+  const [message, setMessage] = useState("")
+
+  console.log(message)
 
   const fetchmessages = useCallback(
     async () => {
@@ -32,7 +35,7 @@ function ChatPage() {
       let newMessages = response.data.messages
   
       newMessages = newMessages.sort((a, b) => {
-        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        return new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
       }).filter(message => message.content[0].type === "text" &&  message.content[0].text.value.trim() !== ""
       )
   
@@ -60,10 +63,23 @@ function ChatPage() {
       <div className='flex-grow overflow-y-hidden p-8 space-y-2'>
         {fetching && messages.length === 0 && <div className='text-center font-bold'>Fetching...</div>}
         {messages.length === 0 && !fetching && (<div className='text-center font-bold'>No Messages...</div>)}
-        {messages.map(message => (<div key={message.id}>{message.content[0].type === "text" ? message.content[0].text.value.split("\n").map((text, index) => <p key={index}>{text}</p>) : null}</div>))}
+        {messages.map(message => (<div className={`px-4 py-2 mb-3 rounded-lg w-fit text-lg ${["true","True"].includes(
+          (message.metadata as {fromUser?: string}).fromUser ?? ""
+        ) ? "bg-yellow-400 ml-auto" : "bg-blue-950"}`} key={message.id}>{message.content[0].type === "text" ? message.content[0].text.value.split("\n").map((text, index) => <p key={index}>{text}</p>) : null}</div>))}
       </div>
+
+      <div className='mt-auto p-4 bg-gray-800'>
+        <div className='flex items-center bg-white p-2'>
+          <input type='text' className='flex-grow bg-transparent text-black focus:outline-none' placeholder='Type a message...' value={message} onChange={(e) => setMessage(e.target.value)}/>
+          <button disabled={!userThread?.threadId || sending || !message.trim} className='ml-4 bg-yellow-400 text-blue-950 px-4 py-2 rounded-full focus:outline-none disabled:bg-gray-500'
+          onClick={sendMessage}>Send</button>
+        </div>  
+      </div>
+
     </div>
   )
 }
+
+
 
 export default ChatPage

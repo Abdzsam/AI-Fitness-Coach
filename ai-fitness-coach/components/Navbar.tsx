@@ -21,7 +21,7 @@ const routes = [
 function Navbar() {
   const pathname = usePathname();
   return (
-    <div className=' bg-gray-400 flex flex-row justify-between rounded-2xl backdrop-filter backdrop-blur-sm bg-opacity-10 p-4'>
+    <div className=' bg-blue-950 flex flex-row justify-between p-4'>
       <Link href='/'>
        <h1 className='text-2xl font-mono text-yellow-400'>Fit<span className='text-2xl font-semibold bg-yellow-400 text-blue-950 rounded-sm border-r-4 border-l-4 border-yellow-400'>AI</span></h1>
       </Link>
