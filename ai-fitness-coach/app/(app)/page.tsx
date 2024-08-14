@@ -1,8 +1,9 @@
 "use client"
-import { userThreadAtom } from '@/atoms';
+import { assistantAtom, userThreadAtom } from '@/atoms';
 import axios from 'axios'
 import { useAtom } from 'jotai';
 import { Message } from "openai/resources/beta/threads/messages.js";
+import { Run } from 'openai/resources/beta/threads/runs/runs.mjs';
 import React, { useCallback, useEffect, useState } from 'react'
 import toast from "react-hot-toast" 
 
@@ -11,11 +12,13 @@ const POLLING_FREQUENCY_MS = 1000;
 function ChatPage() {
 
   const [userThread] = useAtom(userThreadAtom)
+  const [assistant] = useAtom(assistantAtom)
 
   const [fetching, setFetching] = useState(true)
   const [messages, setMessages] = useState<Message[]>([])
   const [message, setMessage] = useState("")
   const [sending, setSending] = useState(false)
+  const [pollingRun, setPollingRun] = useState(false);
 
   const fetchmessages = useCallback(
     async () => {
@@ -56,12 +59,72 @@ function ChatPage() {
 
     return () => clearInterval(interValid)
   },[fetchmessages])
+
+  const startRun = async (threadId: string, assistantId: string): Promise<string> => {
+    try {
+      const {data: { success, run, error },} = await axios.post<{ success: boolean; error?: string; run?: Run}>("api/run/create", {threadId,assistantId,});
+
+      if (!success || !run) {
+        console.error(error);
+        toast.error("Failed to start run.");
+        return "";
+      }
+
+      return run.id;
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to start run.");
+      return "";
+    }
+  }
+
+  const pollRunStatus = async (threadId: string, runId: string) => {
+    setPollingRun(true);
+
+    const intervalId = setInterval(async () => {
+try {
+        const {data: { run, success, error },} = await axios.post<{success: boolean;error?: string;run?: Run;}>("api/run/retrieve", {threadId,runId,});
+
+        if (!success || !run) {
+          console.error(error);
+          toast.error("Failed to poll run status.");
+          return;
+        }
+
+        console.log("run", run);
+
+        if (run.status === "completed") {
+          clearInterval(intervalId);
+          setPollingRun(false);
+          fetchmessages();
+          return;
+        } else if (run.status === "failed") {
+          clearInterval(intervalId);
+          setPollingRun(false);
+          toast.error("Run failed.");
+          return;
+        }
+      } catch (error) {
+        console.error(error);
+        toast.error("Failed to poll run status.");
+        clearInterval(intervalId);
+      }
+    }, POLLING_FREQUENCY_MS);
+
+    return () => clearInterval(intervalId);
+  }
   
   const sendMessage = async () => {
 
-    if(!userThread || sending) return
+    if(!userThread || sending || !assistant) {
+      toast.error("Failed to send message. Invalid State.")
+      return
+    }
+
+    setSending(true)
     
-    const { data: { message: newMessages }, } = await axios.post<{ success: boolean, message?: Message, error?: string}>
+    try{
+const { data: { message: newMessages }, } = await axios.post<{ success: boolean, message?: Message, error?: string}>
     ("/api/message/create", { message, threadId: userThread.threadId, fromUser: "true",})
 
     if(!newMessages){
@@ -71,13 +134,32 @@ function ChatPage() {
     }
 
     setMessages((prev) => [...prev,newMessages])
+    setMessage("")
+    toast.success("Message sent.")
+
+    const runId = await startRun(userThread.threadId, assistant?.assistantId)
+    if (!runId) {
+      toast.error("Failed to start run.");
+      return;
+    }
+    pollRunStatus(userThread.threadId, runId)
+    }
+    catch(err) {
+      console.error("Failed to send message")
+      toast.error("Failed to send message. PLease try again.")
+    }
+    finally{
+      setSending(false)
+    }
+
+    
   }
 
  
 
   return (
     <div className='w-screen h-screen flex flex-col bg-blue-950 text-yellow-400'>
-      <div className='flex-grow overflow-y-hidden p-8 space-y-2'>
+      <div className='flex-grow overflow-y-scroll p-8 space-y-2'>
         {fetching && messages.length === 0 && <div className='text-center font-bold'>Fetching...</div>}
         {messages.length === 0 && !fetching && (<div className='text-center font-bold'>No Messages...</div>)}
         {messages.map(message => (<div className={`px-4 py-2 mb-3 rounded-lg w-fit text-lg ${["true","True"].includes(
@@ -88,8 +170,8 @@ function ChatPage() {
       <div className='mt-auto p-4 bg-gray-800'>
         <div className='flex items-center bg-white p-2'>
           <input type='text' className='flex-grow bg-transparent text-black focus:outline-none' placeholder='Type a message...' value={message} onChange={(e) => setMessage(e.target.value)}/>
-          <button disabled={!userThread?.threadId || sending || !message.trim} className='ml-4 bg-yellow-400 text-blue-950 px-4 py-2 rounded-full focus:outline-none disabled:bg-gray-500'
-          onClick={sendMessage}>Send</button>
+          <button disabled={!userThread?.threadId || !assistant || sending || !message.trim} className='ml-4 bg-yellow-400 text-blue-950 px-4 py-2 rounded-full focus:outline-none disabled:bg-gray-500'
+          onClick={sendMessage}>{sending ? "Sending..." : pollingRun ? "Polling Run..." : "Send"}</button>
         </div>  
       </div>
 
