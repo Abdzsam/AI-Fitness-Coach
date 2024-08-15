@@ -154,6 +154,18 @@
       }
     }
 
+    const clearMessages = async () => {
+      if(!userThread) return;
+
+      try {
+        await axios.post('/api/message/clear', { threadId: userThread.threadId });
+        setMessages([]);
+        toast.success("Messages cleared.");
+      } catch (error) {
+        console.error("Failed to clear messages");
+        toast.error("Failed to clear messages. Please try again.");
+      }
+    }
     return (
       <div className='w-screen h-screen flex flex-col bg-blue-900 text-yellow-400'>
         <div className='flex-grow overflow-y-scroll p-8 space-y-2'>
@@ -168,6 +180,9 @@
           <div className='flex items-center bg-blue-950 rounded-full p-2'>
             <input type='text' className='flex-grow bg-transparent text-yellow-400 focus:outline-none rounded-lg p-3' placeholder='Type a message...' value={message} onChange={(e) => setMessage(e.target.value)} onKeyDown={(e) => {if (e.key === "Enter" && message.trim()) {sendMessage();}}}/>
             <button disabled={!userThread?.threadId || !assistant || sending || !message.trim()} className='ml-4 bg-yellow-400 text-blue-950 px-10 py-3 rounded-full focus:outline-none disabled:bg-yellow-600' onClick={sendMessage}>{sending ? "Sending..." : pollingRun ? "Polling..." : "Send"}</button>
+            <button onClick={clearMessages} className='bg-red-800 rounded-full ml-2 p-1.5 hover:bg-red-600'> 
+              <img src='https://www.iconpacks.net/icons/1/free-trash-icon-347-thumb.png' alt='Clear All' className='w-9 rounded-full focus:outline-none filter: invert'/>
+            </button>
           </div>  
         </div>
       </div>
