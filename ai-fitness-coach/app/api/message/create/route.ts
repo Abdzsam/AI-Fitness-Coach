@@ -2,13 +2,13 @@ import { NextResponse } from "next/server"
 import OpenAI from "openai"
 
 export async function POST(req: Request) {
-    const {message, threadID, fromUser = false} = await req.json()
+    const {message, threadId, fromUser = false} = await req.json()
 
-    console.log("from user", {message, threadID})
+    console.log("from user", {message, threadId})
 
-    if(!threadID || !message){
+    if(!threadId || !message){
         return NextResponse.json(
-            { error: "threadID and message are required", success: false},
+            { error: "threadId and message are required", success: false},
             { status: 400}
         )
     }
@@ -16,7 +16,7 @@ export async function POST(req: Request) {
     const openai = new OpenAI()
 
     try {
-        const threadMessage = await openai.beta.threads.messages.create(threadID, {
+        const threadMessage = await openai.beta.threads.messages.create(threadId, {
             role: "user",
             content: message,
             metadata: {

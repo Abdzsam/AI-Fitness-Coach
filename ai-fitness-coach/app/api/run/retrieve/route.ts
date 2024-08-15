@@ -2,9 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
 
 export async function POST(req: NextRequest) {
-    const { threadID, runId } = await req.json()
+    const { threadId, runId } = await req.json()
 
-    if(!threadID || !runId) {
+    if(!threadId || !runId) {
         return NextResponse.json(
             { error: "threadId and runId are required", success: false},
             { status: 400},
@@ -14,7 +14,7 @@ export async function POST(req: NextRequest) {
     const openai = new OpenAI()
 
     try {
-        const run = await openai.beta.threads.runs.retrieve(threadID, runId)
+        const run = await openai.beta.threads.runs.retrieve(threadId, runId)
 
         console.log("from openai run", run)
 
