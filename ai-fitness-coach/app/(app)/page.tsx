@@ -166,11 +166,10 @@
 
         <div className='mt-auto p-4 bg-blue-900'>
           <div className='flex items-center bg-blue-950 rounded-full p-2'>
-            <input type='text' className='flex-grow bg-transparent text-yellow-400 focus:outline-none rounded-lg p-3' placeholder='Type a message...' value={message} onChange={(e) => setMessage(e.target.value)}/>
+            <input type='text' className='flex-grow bg-transparent text-yellow-400 focus:outline-none rounded-lg p-3' placeholder='Type a message...' value={message} onChange={(e) => setMessage(e.target.value)} onKeyDown={(e) => {if (e.key === "Enter" && message.trim()) {sendMessage();}}}/>
             <button disabled={!userThread?.threadId || !assistant || sending || !message.trim()} className='ml-4 bg-yellow-400 text-blue-950 px-10 py-3 rounded-full focus:outline-none disabled:bg-yellow-600' onClick={sendMessage}>{sending ? "Sending..." : pollingRun ? "Polling..." : "Send"}</button>
           </div>  
         </div>
-
       </div>
     )
   }
